@@ -23,22 +23,21 @@
   --good-bg: rgba(61,214,140,.12);
   --bad: #ff6b7a;
   --bad-bg: rgba(255,107,122,.12);
-  --warn: #ffc14d;
   --radius: 16px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang HK", "Noto Sans TC", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100%; }
-body { font-family: var(--font); padding: 0 0 calc(16px + var(--safe-bottom)); }
+body { padding: 0 0 calc(16px + var(--safe-bottom)); }
 button, input { font: inherit; }
 .app { max-width: 480px; margin: 0 auto; padding: 20px 16px 0; min-height: 100dvh; display: flex; flex-direction: column; }
 .hidden { display: none !important; }
 
-.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 10px; }
 .logo { font-size: 1.15rem; font-weight: 700; letter-spacing: .02em; }
 .logo span { color: var(--accent); }
-.chip { font-size: .75rem; color: var(--muted); background: var(--surface); border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px; }
+.chip { font-size: .75rem; color: var(--muted); background: var(--surface); border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 14px; }
 .card h2 { margin: 0 0 8px; font-size: 1.05rem; }
@@ -60,8 +59,6 @@ button, input { font: inherit; }
 .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
 .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
-.btn-row { display: flex; gap: 10px; }
-.btn-row .btn { flex: 1; margin-bottom: 0; }
 
 .progress-bar { height: 6px; background: var(--surface2); border-radius: 999px; overflow: hidden; margin: 8px 0 16px; }
 .progress-bar > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent-dim), var(--accent)); border-radius: 999px; transition: width .25s ease; }
@@ -69,11 +66,34 @@ button, input { font: inherit; }
 .quiz-meta { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: .85rem; margin-bottom: 4px; }
 .kanji-box {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 36px 16px; text-align: center; margin-bottom: 14px;
-  min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 28px 16px; text-align: center; margin-bottom: 14px;
+  min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 .kanji { font-size: clamp(2.4rem, 10vw, 3.4rem); font-weight: 700; letter-spacing: .06em; line-height: 1.2; }
 .meaning { margin-top: 10px; color: var(--muted); font-size: .95rem; }
+
+.choices { display: grid; gap: 10px; margin-bottom: 12px; }
+.choice {
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+  width: 100%; text-align: left; min-height: 64px;
+  background: var(--surface); border: 2px solid var(--border); border-radius: 14px;
+  color: var(--text); padding: 14px 16px; cursor: pointer;
+  transition: transform .08s ease, border-color .12s, background .12s;
+  -webkit-user-select: none; user-select: none;
+}
+.choice:active:not(:disabled) { transform: scale(.98); }
+.choice:disabled { cursor: default; }
+.choice .hira { font-size: 1.25rem; font-weight: 700; letter-spacing: .04em; }
+.choice .roma { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+.choice.correct {
+  border-color: var(--good); background: var(--good-bg);
+}
+.choice.correct .hira, .choice.correct .roma { color: var(--good); }
+.choice.wrong {
+  border-color: var(--bad); background: var(--bad-bg);
+}
+.choice.wrong .hira, .choice.wrong .roma { color: var(--bad); }
+.choice.dim { opacity: .45; }
 
 .input-wrap { margin-bottom: 12px; }
 .input-wrap label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: 6px; }
@@ -106,6 +126,16 @@ button, input { font: inherit; }
 }
 .switch.on::after { left: 23px; }
 
+.mode-seg {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 6px;
+}
+.mode-seg button {
+  border: none; background: transparent; color: var(--muted); border-radius: 10px;
+  padding: 12px 8px; font-weight: 600; font-size: .95rem; cursor: pointer;
+}
+.mode-seg button.active { background: var(--accent); color: #061018; }
+
 .score-big { text-align: center; padding: 24px 0 8px; }
 .score-big .num { font-size: 3.2rem; font-weight: 800; color: var(--accent); }
 .score-big .sub { color: var(--muted); margin-top: 4px; }
@@ -128,14 +158,12 @@ button, input { font: inherit; }
 .badge { font-size: .7rem; padding: 2px 8px; border-radius: 999px; background: var(--bad-bg); color: var(--bad); }
 
 .footer-note { text-align: center; color: var(--muted); font-size: .75rem; margin-top: auto; padding-top: 24px; opacity: .7; }
-
 .empty { text-align: center; color: var(--muted); padding: 20px 0; }
 </style>
 </head>
 <body>
 <div class="app" id="app">
 
-  <!-- HOME -->
   <section id="view-home">
     <div class="header">
       <div class="logo">日文讀音 <span>Quiz</span></div>
@@ -148,7 +176,11 @@ button, input { font: inherit; }
     </div>
     <div class="card">
       <h2>讀音練習</h2>
-      <p>睇漢字，輸入平假名或羅馬字。每 round 10 題；錯嘅詞會優先再出現。</p>
+      <p>睇漢字，揀正確平假名讀音。每 round 10 題；相似讀音作干擾，錯嘅詞會優先再出現。</p>
+    </div>
+    <div class="mode-seg" role="tablist" aria-label="答題模式">
+      <button type="button" id="mode-mc" class="active" role="tab" aria-selected="true">選擇題</button>
+      <button type="button" id="mode-type" role="tab" aria-selected="false">打字答</button>
     </div>
     <button class="btn btn-primary" id="btn-start">開始 Round</button>
     <button class="btn btn-secondary" id="btn-progress">進度 / 弱項</button>
@@ -159,7 +191,6 @@ button, input { font: inherit; }
     <p class="footer-note">資料來自 Japanese Vocab · 本地儲存進度</p>
   </section>
 
-  <!-- QUIZ -->
   <section id="view-quiz" class="hidden">
     <div class="quiz-meta">
       <span id="q-progress">1 / 10</span>
@@ -170,17 +201,19 @@ button, input { font: inherit; }
       <div class="kanji" id="q-kanji">—</div>
       <div class="meaning hidden" id="q-meaning"></div>
     </div>
-    <div class="input-wrap">
-      <label for="q-input">讀音（平假名 或 romaji）</label>
-      <input id="q-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="例：さわる 或 sawaru">
+    <div id="mc-wrap" class="choices" aria-label="選項"></div>
+    <div id="type-wrap" class="hidden">
+      <div class="input-wrap">
+        <label for="q-input">讀音（平假名 或 romaji）</label>
+        <input id="q-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="例：さわる 或 sawaru">
+      </div>
+      <button class="btn btn-primary" id="btn-submit">提交</button>
     </div>
     <div class="feedback" id="q-feedback"></div>
-    <button class="btn btn-primary" id="btn-submit">提交</button>
     <button class="btn btn-ghost hidden" id="btn-next">下一題</button>
     <button class="btn btn-ghost" id="btn-quit" style="margin-top:8px">結束並返主頁</button>
   </section>
 
-  <!-- RESULT -->
   <section id="view-result" class="hidden">
     <div class="header">
       <div class="logo">本 Round 結果</div>
@@ -199,7 +232,6 @@ button, input { font: inherit; }
     <button class="btn btn-secondary" id="btn-home">返主頁</button>
   </section>
 
-  <!-- PROGRESS -->
   <section id="view-progress" class="hidden">
     <div class="header">
       <div class="logo">進度</div>
@@ -225,6 +257,7 @@ const VOCAB = [{"id": "01", "kanji": "触る", "hiragana": "さわる", "romaji"
 const STORAGE_KEY = "jp-vocab-quiz-v1";
 const ROUND_SIZE = 10;
 const MASTER_STREAK = 3;
+const AUTO_ADVANCE_MS = 900;
 
 const $ = (id) => document.getElementById(id);
 const views = {
@@ -236,7 +269,9 @@ const views = {
 
 let state = loadState();
 let showMeaning = false;
-let round = null; // { queue, index, score, misses, answered }
+let answerMode = "mc"; // mc | type
+let round = null;
+let advanceTimer = null;
 
 function loadState() {
   try {
@@ -253,10 +288,6 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-function wordKey(w) {
-  return w.id;
-}
-
 function ensureWord(id) {
   if (!state.words[id]) {
     state.words[id] = { seen: 0, correct: 0, wrong: 0, streak: 0, last: 0 };
@@ -269,9 +300,21 @@ function showView(name) {
   views[name].classList.remove("hidden");
 }
 
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function refreshHome() {
-  const total = VOCAB.length;
-  $("home-count").textContent = total + " 詞";
+  $("home-count").textContent = VOCAB.length + " 詞";
   let seen = 0, mastered = 0, weak = 0;
   for (const w of VOCAB) {
     const s = state.words[w.id];
@@ -316,34 +359,19 @@ function refreshProgress() {
   }
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
-}
-
-function shuffle(arr) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
 function weightFor(w) {
   const s = state.words[w.id];
-  if (!s || s.seen === 0) return 8; // unseen priority
+  if (!s || s.seen === 0) return 8;
   let weight = 1;
   weight += s.wrong * 3;
   weight += Math.max(0, 3 - s.streak) * 2;
   if (s.streak >= MASTER_STREAK) weight = Math.max(0.4, weight * 0.25);
-  // slight freshness: not seen recently
   const age = Date.now() - (s.last || 0);
   if (age > 86400000 * 3) weight += 1.5;
   return weight;
 }
 
 function pickRound() {
-  // Weighted random sample without replacement
   const pool = VOCAB.map((w) => ({ w, weight: weightFor(w) }));
   const picked = [];
   const temp = pool.slice();
@@ -362,43 +390,220 @@ function pickRound() {
   return shuffle(picked);
 }
 
-/* ---------- Answer normalization ---------- */
+/* ---------- Reading similarity (tricky distractors) ---------- */
+const LONG_VOWEL_PAIRS = [
+  ["こう", "こお"], ["こう", "きゅう"], ["こう", "ごう"],
+  ["じゅう", "じょう"], ["ぎょう", "じょう"], ["しょう", "じょう"],
+  ["ちゅう", "ちょう"], ["しゅう", "しょう"], ["りょう", "ろう"],
+  ["おう", "おお"], ["ゆう", "よう"], ["えい", "ええ"],
+  ["うう", "うー"], ["あー", "ああ"],
+];
+
+function normalizeHira(h) {
+  return (h || "").replace(/[\s\u3000]/g, "");
+}
+
+function moraRough(h) {
+  // Approximate mora count: treat small kana as part of previous
+  return normalizeHira(h).replace(/[ゃゅょぁぃぅぇぉっ]/g, "").length;
+}
+
+function sharedPrefixLen(a, b) {
+  const n = Math.min(a.length, b.length);
+  let i = 0;
+  while (i < n && a[i] === b[i]) i++;
+  return i;
+}
+
+function sharedSuffixLen(a, b) {
+  const n = Math.min(a.length, b.length);
+  let i = 0;
+  while (i < n && a[a.length - 1 - i] === b[b.length - 1 - i]) i++;
+  return i;
+}
+
+function longVowelSwapScore(a, b) {
+  let score = 0;
+  for (const [x, y] of LONG_VOWEL_PAIRS) {
+    const aHasX = a.includes(x), aHasY = a.includes(y);
+    const bHasX = b.includes(x), bHasY = b.includes(y);
+    if ((aHasX && bHasY) || (aHasY && bHasX)) score += 4;
+    if ((aHasX && bHasX) || (aHasY && bHasY)) score += 1;
+  }
+  // づ/ず, ぢ/じ
+  if ((a.includes("づ") && b.includes("ず")) || (a.includes("ず") && b.includes("づ"))) score += 3;
+  if ((a.includes("ぢ") && b.includes("じ")) || (a.includes("じ") && b.includes("ぢ"))) score += 3;
+  return score;
+}
+
+function charOverlap(a, b) {
+  const setB = new Set(b);
+  let n = 0;
+  for (const ch of a) if (setB.has(ch)) n++;
+  return n;
+}
+
+function readingSimilarity(ha, hb) {
+  const a = normalizeHira(ha);
+  const b = normalizeHira(hb);
+  if (!a || !b || a === b) return -Infinity;
+  let score = 0;
+  const la = a.length, lb = b.length;
+  const lenDiff = Math.abs(la - lb);
+  if (lenDiff === 0) score += 5;
+  else if (lenDiff === 1) score += 3;
+  else if (lenDiff === 2) score += 1;
+  else score -= lenDiff;
+
+  const ma = moraRough(a), mb = moraRough(b);
+  if (ma === mb) score += 3;
+  else if (Math.abs(ma - mb) === 1) score += 1;
+
+  score += sharedPrefixLen(a, b) * 2;
+  score += sharedSuffixLen(a, b) * 2;
+  score += longVowelSwapScore(a, b);
+  score += Math.min(charOverlap(a, b), 4);
+
+  // Same starting consonant family (さ/す, お/おど etc.) — first kana same
+  if (a[0] === b[0]) score += 2;
+
+  // Verb ending family: る/す/う swaps are classic traps
+  const endA = a.slice(-1), endB = b.slice(-1);
+  if (["る","す","う","く","ぐ","む","ぶ","つ"].includes(endA) && endA !== endB &&
+      ["る","す","う","く","ぐ","む","ぶ","つ"].includes(endB) && a.slice(0, -1) === b.slice(0, -1)) {
+    score += 8;
+  }
+  // stem + める/れる etc.
+  if (a.length >= 3 && b.length >= 3 && a.slice(0, -2) === b.slice(0, -2) && a !== b) score += 4;
+
+  return score;
+}
+
+function kanjiOverlapBonus(wa, wb) {
+  const ka = [...(wa.kanji || "")].filter((c) => c !== "…" && c !== ".");
+  const kb = new Set([...(wb.kanji || "")]);
+  let n = 0;
+  for (const c of ka) if (kb.has(c)) n++;
+  return n * 6; // shared kanji (渡る/渡す, 本〜 family) is very tricky
+}
+
+function pickDistractors(correct, count = 3) {
+  const correctH = normalizeHira(correct.hiragana);
+  const usedHira = new Set([correctH]);
+  const scored = [];
+
+  for (const w of VOCAB) {
+    if (w.id === correct.id) continue;
+    const h = normalizeHira(w.hiragana);
+    if (usedHira.has(h)) continue; // e.g. 機械/機会 same reading — skip as distractor
+    let score = readingSimilarity(correct.hiragana, w.hiragana);
+    score += kanjiOverlapBonus(correct, w);
+    // Prefer real vocab; slight random jitter so options vary between rounds
+    score += Math.random() * 1.5;
+    scored.push({ w, score, h });
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+
+  const picked = [];
+  for (const item of scored) {
+    if (picked.length >= count) break;
+    if (usedHira.has(item.h)) continue;
+    // Prefer positive similarity; still allow fallbacks if pool thin
+    if (item.score < 2 && picked.length >= 1 && scored.length > 10) {
+      // only take weak ones if we don't have enough yet later
+      continue;
+    }
+    picked.push(item.w);
+    usedHira.add(item.h);
+  }
+
+  // Fallback fill with next-best even if low score
+  if (picked.length < count) {
+    for (const item of scored) {
+      if (picked.length >= count) break;
+      if (usedHira.has(item.h)) continue;
+      picked.push(item.w);
+      usedHira.add(item.h);
+    }
+  }
+
+  // Synthetic near-misses if still short (mutate correct reading)
+  while (picked.length < count) {
+    const synth = synthesizeNearMiss(correct, usedHira);
+    if (!synth) break;
+    picked.push(synth);
+    usedHira.add(normalizeHira(synth.hiragana));
+  }
+
+  return picked.slice(0, count);
+}
+
+function synthesizeNearMiss(correct, usedHira) {
+  const h = normalizeHira(correct.hiragana);
+  const mutations = [];
+  // ending swaps
+  if (h.endsWith("る")) mutations.push(h.slice(0, -1) + "す", h.slice(0, -1) + "う");
+  if (h.endsWith("す")) mutations.push(h.slice(0, -1) + "る");
+  if (h.endsWith("う")) mutations.push(h.slice(0, -1) + "る");
+  // long vowel swaps
+  for (const [x, y] of LONG_VOWEL_PAIRS) {
+    if (h.includes(x)) mutations.push(h.split(x).join(y));
+    if (h.includes(y)) mutations.push(h.split(y).join(x));
+  }
+  if (h.includes("づ")) mutations.push(h.split("づ").join("ず"));
+  if (h.includes("ず")) mutations.push(h.split("ず").join("づ"));
+  // drop/add small っ
+  if (h.includes("っ")) mutations.push(h.replace("っ", ""));
+  else if (h.length >= 3) mutations.push(h.slice(0, 2) + "っ" + h.slice(2));
+
+  for (const m of shuffle(mutations)) {
+    if (!m || m === h || usedHira.has(m)) continue;
+    // Don't collide with a real vocab reading already in options
+    const real = VOCAB.find((w) => normalizeHira(w.hiragana) === m);
+    if (real) continue;
+    return {
+      id: "synth-" + m,
+      kanji: correct.kanji,
+      hiragana: m,
+      romaji: "(near miss)",
+      meaning: "",
+      _synth: true,
+    };
+  }
+  return null;
+}
+
+function buildChoices(correct) {
+  const distractors = pickDistractors(correct, 3);
+  const options = shuffle([correct, ...distractors]);
+  return options;
+}
+
+/* ---------- Type-in answer check ---------- */
 function stripMarks(s) {
   return s.normalize("NFKC")
-    .replace(/[\s\u3000_\-・·'.]/g, "")
+    .replace(/[\s\u3000_\-・·'.']/g, "")
     .replace(/[ー―─]/g, "")
     .toLowerCase();
 }
 
 function expandRomajiLongVowels(s) {
-  // Accept ou/oo, uu, ei/ee, aa, ii, and macron forms already stripped
-  // Generate a few common equivalents for matching
   const variants = new Set([s]);
   const swap = (str, a, b) => {
     if (str.includes(a)) variants.add(str.split(a).join(b));
     if (str.includes(b)) variants.add(str.split(b).join(a));
   };
-  // iterate a couple times for compounded
   for (let i = 0; i < 2; i++) {
-    const cur = [...variants];
-    for (const v of cur) {
+    for (const v of [...variants]) {
       swap(v, "ou", "oo");
-      swap(v, "uu", "u"); // soft: allow missing long u? no — keep uu
-      swap(v, "aa", "a");
       swap(v, "ee", "ei");
-      swap(v, "ii", "i");
-      // n' handling already stripped apostrophe
-      if (v.includes("ou")) variants.add(v.replace(/ou/g, "ō").replace(/ō/g, "o")); // unlikely after strip
     }
   }
-  // Also: juugyou <-> jugyou style (double vowel written)
-  const more = [];
-  for (const v of variants) {
-    more.push(v.replace(/oo/g, "ou"));
-    more.push(v.replace(/ou/g, "oo"));
-    // chuu <-> chu for 中? keep strict-ish
+  for (const v of [...variants]) {
+    variants.add(v.replace(/oo/g, "ou"));
+    variants.add(v.replace(/ou/g, "oo"));
   }
-  more.forEach((m) => variants.add(m));
   return variants;
 }
 
@@ -406,7 +611,7 @@ function acceptSet(w) {
   const set = new Set();
   const addH = (h) => { if (h) set.add(stripMarks(h)); };
   const addR = (r) => {
-    if (!r) return;
+    if (!r || r === "(near miss)") return;
     const base = stripMarks(r);
     for (const v of expandRomajiLongVowels(base)) set.add(v);
   };
@@ -414,38 +619,52 @@ function acceptSet(w) {
   addR(w.romaji);
   (w.altHiragana || []).forEach(addH);
   (w.altRomaji || []).forEach(addR);
-  // Common: づ <-> ず for 片付ける already in alt
   return set;
 }
 
-function checkAnswer(w, raw) {
+function checkTypedAnswer(w, raw) {
   const ans = stripMarks(raw || "");
   if (!ans) return false;
   const set = acceptSet(w);
   if (set.has(ans)) return true;
-  // Also try expanding user romaji
-  for (const v of expandRomajiLongVowels(ans)) {
-    if (set.has(v)) return true;
-  }
+  for (const v of expandRomajiLongVowels(ans)) if (set.has(v)) return true;
   return false;
 }
 
 /* ---------- Quiz flow ---------- */
+function clearAdvanceTimer() {
+  if (advanceTimer) {
+    clearTimeout(advanceTimer);
+    advanceTimer = null;
+  }
+}
+
+function setModeUI() {
+  $("mode-mc").classList.toggle("active", answerMode === "mc");
+  $("mode-type").classList.toggle("active", answerMode === "type");
+  $("mode-mc").setAttribute("aria-selected", answerMode === "mc" ? "true" : "false");
+  $("mode-type").setAttribute("aria-selected", answerMode === "type" ? "true" : "false");
+}
+
 function startRound() {
+  clearAdvanceTimer();
   round = {
     queue: pickRound(),
     index: 0,
     score: 0,
     misses: [],
     answered: false,
+    choices: null,
   };
   showView("quiz");
   renderQuestion();
 }
 
 function renderQuestion() {
+  clearAdvanceTimer();
   const w = round.queue[round.index];
   round.answered = false;
+  round.choices = null;
   $("q-progress").textContent = `${round.index + 1} / ${round.queue.length}`;
   $("q-score").textContent = `得分 ${round.score}`;
   $("q-bar").style.width = `${(round.index / round.queue.length) * 100}%`;
@@ -453,60 +672,123 @@ function renderQuestion() {
   $("q-meaning").textContent = w.meaning || "";
   if (showMeaning) $("q-meaning").classList.remove("hidden");
   else $("q-meaning").classList.add("hidden");
-  const input = $("q-input");
-  input.value = "";
-  input.classList.remove("ok", "bad");
-  input.disabled = false;
+
   $("q-feedback").className = "feedback";
   $("q-feedback").innerHTML = "";
-  $("btn-submit").classList.remove("hidden");
   $("btn-next").classList.add("hidden");
-  $("btn-submit").textContent = "提交";
-  setTimeout(() => input.focus(), 50);
+
+  const mcWrap = $("mc-wrap");
+  const typeWrap = $("type-wrap");
+
+  if (answerMode === "mc") {
+    typeWrap.classList.add("hidden");
+    mcWrap.classList.remove("hidden");
+    mcWrap.innerHTML = "";
+    const choices = buildChoices(w);
+    round.choices = choices;
+    choices.forEach((opt, i) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "choice";
+      btn.dataset.index = String(i);
+      const roma = opt._synth ? "" : `<span class="roma">${escapeHtml(opt.romaji)}</span>`;
+      btn.innerHTML = `<span class="hira">${escapeHtml(opt.hiragana)}</span>${roma}`;
+      btn.addEventListener("click", () => onChoose(i));
+      mcWrap.appendChild(btn);
+    });
+  } else {
+    mcWrap.classList.add("hidden");
+    mcWrap.innerHTML = "";
+    typeWrap.classList.remove("hidden");
+    const input = $("q-input");
+    input.value = "";
+    input.classList.remove("ok", "bad");
+    input.disabled = false;
+    $("btn-submit").classList.remove("hidden");
+    setTimeout(() => input.focus(), 50);
+  }
 }
 
-function submitAnswer() {
-  if (!round || round.answered) return;
-  const w = round.queue[round.index];
-  const input = $("q-input");
-  const raw = input.value.trim();
-  if (!raw) {
-    input.focus();
-    return;
-  }
-  round.answered = true;
-  const ok = checkAnswer(w, raw);
+function recordOutcome(w, ok, userLabel) {
   const st = ensureWord(w.id);
   st.seen += 1;
   st.last = Date.now();
   state.totalAsked += 1;
-
-  const fb = $("q-feedback");
   if (ok) {
     round.score += 1;
     st.correct += 1;
     st.streak += 1;
     state.totalCorrect += 1;
-    input.classList.add("ok");
-    fb.className = "feedback show ok";
-    fb.innerHTML = `✓ 啱！<div class="reading">${escapeHtml(w.hiragana)} · ${escapeHtml(w.romaji)}</div>`;
   } else {
     st.wrong += 1;
     st.streak = 0;
-    round.misses.push({ w, user: raw });
-    input.classList.add("bad");
+    round.misses.push({ w, user: userLabel });
+  }
+  saveState();
+  $("q-score").textContent = `得分 ${round.score}`;
+}
+
+function showFeedback(ok, w) {
+  const fb = $("q-feedback");
+  if (ok) {
+    fb.className = "feedback show ok";
+    fb.innerHTML = `✓ 啱！<div class="reading">${escapeHtml(w.hiragana)} · ${escapeHtml(w.romaji)}</div>`;
+  } else {
     fb.className = "feedback show bad";
     fb.innerHTML = `✗ 唔啱<div class="reading">正確：${escapeHtml(w.hiragana)} · ${escapeHtml(w.romaji)}</div>`;
   }
-  saveState();
+}
+
+function afterAnswer(ok) {
+  $("btn-next").classList.remove("hidden");
+  // Auto-advance: faster on correct
+  const delay = ok ? AUTO_ADVANCE_MS : AUTO_ADVANCE_MS + 500;
+  clearAdvanceTimer();
+  advanceTimer = setTimeout(() => {
+    advanceTimer = null;
+    nextQuestion();
+  }, delay);
+}
+
+function onChoose(index) {
+  if (!round || round.answered) return;
+  const w = round.queue[round.index];
+  const chosen = round.choices[index];
+  const ok = chosen.id === w.id;
+  round.answered = true;
+
+  const buttons = [...$("mc-wrap").querySelectorAll(".choice")];
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    const opt = round.choices[i];
+    if (opt.id === w.id) btn.classList.add("correct");
+    else if (i === index && !ok) btn.classList.add("wrong");
+    else btn.classList.add("dim");
+  });
+
+  recordOutcome(w, ok, chosen.hiragana);
+  showFeedback(ok, w);
+  afterAnswer(ok);
+}
+
+function submitTyped() {
+  if (!round || round.answered) return;
+  const w = round.queue[round.index];
+  const input = $("q-input");
+  const raw = input.value.trim();
+  if (!raw) { input.focus(); return; }
+  round.answered = true;
+  const ok = checkTypedAnswer(w, raw);
+  input.classList.add(ok ? "ok" : "bad");
   input.disabled = true;
   $("btn-submit").classList.add("hidden");
-  $("btn-next").classList.remove("hidden");
-  $("q-score").textContent = `得分 ${round.score}`;
-  $("btn-next").focus();
+  recordOutcome(w, ok, raw);
+  showFeedback(ok, w);
+  afterAnswer(ok);
 }
 
 function nextQuestion() {
+  clearAdvanceTimer();
   if (!round) return;
   if (round.index + 1 >= round.queue.length) {
     finishRound();
@@ -517,6 +799,7 @@ function nextQuestion() {
 }
 
 function finishRound() {
+  clearAdvanceTimer();
   state.roundsPlayed = (state.roundsPlayed || 0) + 1;
   saveState();
   $("q-bar").style.width = "100%";
@@ -537,7 +820,7 @@ function finishRound() {
     wrap.classList.remove("hidden");
     for (const m of round.misses) {
       const li = document.createElement("li");
-      li.innerHTML = `<div><span class="k">${escapeHtml(m.w.kanji)}</span><span class="u">你答：${escapeHtml(m.user)}</span></div><div class="r">${escapeHtml(m.w.hiragana)}</div>`;
+      li.innerHTML = `<div><span class="k">${escapeHtml(m.w.kanji)}</span><span class="u">你揀／答：${escapeHtml(m.user)}</span></div><div class="r">${escapeHtml(m.w.hiragana)}</div>`;
       list.appendChild(li);
     }
   } else {
@@ -550,13 +833,14 @@ function finishRound() {
 /* ---------- UI wiring ---------- */
 $("btn-start").addEventListener("click", startRound);
 $("btn-again").addEventListener("click", startRound);
-$("btn-home").addEventListener("click", () => { refreshHome(); showView("home"); });
+$("btn-home").addEventListener("click", () => { clearAdvanceTimer(); refreshHome(); showView("home"); });
 $("btn-back-home").addEventListener("click", () => { refreshHome(); showView("home"); });
 $("btn-progress").addEventListener("click", () => { refreshProgress(); showView("progress"); });
-$("btn-submit").addEventListener("click", submitAnswer);
+$("btn-submit").addEventListener("click", submitTyped);
 $("btn-next").addEventListener("click", nextQuestion);
 $("btn-quit").addEventListener("click", () => {
-  if (round && round.index > 0 && !confirm("確定結束今個 round？進度（已答過嘅）會保留。")) return;
+  if (round && round.index > 0 && !confirm("確定結束今個 round？已答過嘅進度會保留。")) return;
+  clearAdvanceTimer();
   refreshHome();
   showView("home");
 });
@@ -572,8 +856,19 @@ $("q-input").addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     e.preventDefault();
     if (round && round.answered) nextQuestion();
-    else submitAnswer();
+    else submitTyped();
   }
+});
+
+$("mode-mc").addEventListener("click", () => {
+  answerMode = "mc";
+  setModeUI();
+  try { localStorage.setItem(STORAGE_KEY + "-mode", "mc"); } catch (e) {}
+});
+$("mode-type").addEventListener("click", () => {
+  answerMode = "type";
+  setModeUI();
+  try { localStorage.setItem(STORAGE_KEY + "-mode", "type"); } catch (e) {}
 });
 
 const toggle = $("toggle-meaning");
@@ -583,9 +878,18 @@ toggle.addEventListener("click", () => {
   toggle.setAttribute("aria-checked", showMeaning ? "true" : "false");
   try { localStorage.setItem(STORAGE_KEY + "-meaning", showMeaning ? "1" : "0"); } catch (e) {}
 });
-try { if (localStorage.getItem(STORAGE_KEY + "-meaning") === "1") { showMeaning = true; toggle.classList.add("on"); toggle.setAttribute("aria-checked","true"); } } catch (e) {}
 
-// Service worker optional — skip if file:// 
+try {
+  if (localStorage.getItem(STORAGE_KEY + "-meaning") === "1") {
+    showMeaning = true;
+    toggle.classList.add("on");
+    toggle.setAttribute("aria-checked", "true");
+  }
+  const savedMode = localStorage.getItem(STORAGE_KEY + "-mode");
+  if (savedMode === "type" || savedMode === "mc") answerMode = savedMode;
+} catch (e) {}
+setModeUI();
+
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   navigator.serviceWorker.register("./sw.js").catch(() => {});
 }
