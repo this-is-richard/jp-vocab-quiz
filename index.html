@@ -664,7 +664,10 @@ function renderQuestion() {
 
   $("q-feedback").className = "feedback";
   $("q-feedback").innerHTML = "";
-  $("btn-next").classList.add("hidden");
+  const nextBtn = $("btn-next");
+  nextBtn.classList.add("hidden");
+  nextBtn.classList.remove("btn-primary");
+  nextBtn.classList.add("btn-ghost");
 
   const mcWrap = $("mc-wrap");
   const typeWrap = $("type-wrap");
@@ -729,9 +732,12 @@ function showFeedback(ok, w) {
 }
 
 function afterAnswer(ok) {
-  $("btn-next").classList.remove("hidden");
+  const next = $("btn-next");
+  next.classList.remove("hidden");
+  next.classList.remove("btn-ghost");
+  next.classList.add("btn-primary");
   // Stay on result until user taps 下一題 — especially important when wrong
-  $("btn-next").focus();
+  next.focus();
 }
 
 function onChoose(index) {
