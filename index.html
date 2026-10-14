@@ -74,28 +74,41 @@ button, input { font: inherit; }
 
 .choices { display: grid; gap: 10px; margin-bottom: 12px; }
 .choice {
-  display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+  display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;
   width: 100%; text-align: left; min-height: 64px;
   background: var(--surface); border: 2px solid var(--border); border-radius: 14px;
   color: var(--text); padding: 14px 16px; cursor: pointer;
-  transition: transform .08s ease, border-color .12s, background .12s;
+  transition: transform .08s ease, border-color .12s, background .12s, opacity .12s;
   -webkit-user-select: none; user-select: none;
 }
 .choice:active:not(:disabled) { transform: scale(.98); }
 .choice:disabled { cursor: default; }
+.choice-body { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
 .choice .hira { font-size: 1.25rem; font-weight: 700; letter-spacing: .04em; }
 .choice .roma { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+.choice-mark {
+  flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; font-weight: 800; line-height: 1;
+  visibility: hidden; /* reserve space — no layout jump when mark appears */
+}
 .choice.correct {
   border-color: var(--good); background: var(--good-bg);
 }
 .choice.correct .hira, .choice.correct .roma { color: var(--good); }
+.choice.correct .choice-mark {
+  visibility: visible; color: #061018; background: var(--good);
+}
 .choice.wrong {
   border-color: var(--bad); background: var(--bad-bg);
 }
 .choice.wrong .hira, .choice.wrong .roma { color: var(--bad); }
-.choice.dim { opacity: .45; }
+.choice.wrong .choice-mark {
+  visibility: visible; color: #fff; background: var(--bad);
+}
+.choice.dim { opacity: .4; }
 
-.input-wrap { margin-bottom: 12px; }
+.input-wrap { margin-bottom: 8px; }
 .input-wrap label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: 6px; }
 .input-wrap input {
   width: 100%; background: var(--surface); border: 2px solid var(--border); border-radius: 14px;
@@ -105,14 +118,19 @@ button, input { font: inherit; }
 .input-wrap input.ok { border-color: var(--good); background: var(--good-bg); }
 .input-wrap input.bad { border-color: var(--bad); background: var(--bad-bg); }
 
-.feedback {
-  border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; font-size: .95rem;
-  display: none;
+/* Fixed-height type hint so 下一題 never jumps */
+.type-hint {
+  min-height: 28px; margin: 0 0 12px; font-size: .9rem; font-weight: 600;
+  display: flex; align-items: center; gap: 6px;
 }
-.feedback.show { display: block; }
-.feedback.ok { background: var(--good-bg); color: var(--good); border: 1px solid rgba(61,214,140,.35); }
-.feedback.bad { background: var(--bad-bg); color: var(--bad); border: 1px solid rgba(255,107,122,.35); }
-.feedback .reading { color: var(--text); font-weight: 600; margin-top: 4px; }
+.type-hint.ok { color: var(--good); }
+.type-hint.bad { color: var(--bad); }
+.type-hint .ans { color: var(--text); font-weight: 600; }
+
+.btn:disabled, .btn[disabled] {
+  opacity: .4; cursor: not-allowed; transform: none;
+}
+.quiz-actions { margin-top: 4px; }
 
 .toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; color: var(--muted); font-size: .9rem; }
 .switch {
@@ -207,11 +225,13 @@ button, input { font: inherit; }
         <label for="q-input">讀音（平假名 或 romaji）</label>
         <input id="q-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="例：さわる 或 sawaru">
       </div>
+      <div class="type-hint" id="type-hint" aria-live="polite"></div>
       <button class="btn btn-primary" id="btn-submit">提交</button>
     </div>
-    <div class="feedback" id="q-feedback"></div>
-    <button class="btn btn-ghost hidden" id="btn-next">下一題</button>
-    <button class="btn btn-ghost" id="btn-quit" style="margin-top:8px">結束並返主頁</button>
+    <div class="quiz-actions">
+      <button class="btn btn-primary" id="btn-next" disabled>下一題</button>
+      <button class="btn btn-ghost" id="btn-quit">結束並返主頁</button>
+    </div>
   </section>
 
   <section id="view-result" class="hidden">
@@ -662,12 +682,7 @@ function renderQuestion() {
   if (showMeaning) $("q-meaning").classList.remove("hidden");
   else $("q-meaning").classList.add("hidden");
 
-  $("q-feedback").className = "feedback";
-  $("q-feedback").innerHTML = "";
-  const nextBtn = $("btn-next");
-  nextBtn.classList.add("hidden");
-  nextBtn.classList.remove("btn-primary");
-  nextBtn.classList.add("btn-ghost");
+  setNextEnabled(false);
 
   const mcWrap = $("mc-wrap");
   const typeWrap = $("type-wrap");
@@ -684,7 +699,7 @@ function renderQuestion() {
       btn.className = "choice";
       btn.dataset.index = String(i);
       const roma = opt._synth ? "" : `<span class="roma">${escapeHtml(opt.romaji)}</span>`;
-      btn.innerHTML = `<span class="hira">${escapeHtml(opt.hiragana)}</span>${roma}`;
+      btn.innerHTML = `<span class="choice-body"><span class="hira">${escapeHtml(opt.hiragana)}</span>${roma}</span><span class="choice-mark" aria-hidden="true"></span>`;
       btn.addEventListener("click", () => onChoose(i));
       mcWrap.appendChild(btn);
     });
@@ -696,7 +711,12 @@ function renderQuestion() {
     input.value = "";
     input.classList.remove("ok", "bad");
     input.disabled = false;
-    $("btn-submit").classList.remove("hidden");
+    const hint = $("type-hint");
+    hint.className = "type-hint";
+    hint.innerHTML = "";
+    const submit = $("btn-submit");
+    submit.disabled = false;
+    submit.classList.remove("hidden");
     setTimeout(() => input.focus(), 50);
   }
 }
@@ -720,24 +740,10 @@ function recordOutcome(w, ok, userLabel) {
   $("q-score").textContent = `得分 ${round.score}`;
 }
 
-function showFeedback(ok, w) {
-  const fb = $("q-feedback");
-  if (ok) {
-    fb.className = "feedback show ok";
-    fb.innerHTML = `✓ 啱！<div class="reading">${escapeHtml(w.hiragana)} · ${escapeHtml(w.romaji)}</div>`;
-  } else {
-    fb.className = "feedback show bad";
-    fb.innerHTML = `✗ 唔啱<div class="reading">正確：${escapeHtml(w.hiragana)} · ${escapeHtml(w.romaji)}</div>`;
-  }
-}
-
-function afterAnswer(ok) {
+function setNextEnabled(on) {
   const next = $("btn-next");
-  next.classList.remove("hidden");
-  next.classList.remove("btn-ghost");
-  next.classList.add("btn-primary");
-  // Stay on result until user taps 下一題 — especially important when wrong
-  next.focus();
+  next.disabled = !on;
+  if (on) next.focus();
 }
 
 function onChoose(index) {
@@ -751,14 +757,20 @@ function onChoose(index) {
   buttons.forEach((btn, i) => {
     btn.disabled = true;
     const opt = round.choices[i];
-    if (opt.id === w.id) btn.classList.add("correct");
-    else if (i === index && !ok) btn.classList.add("wrong");
-    else btn.classList.add("dim");
+    const mark = btn.querySelector(".choice-mark");
+    if (opt.id === w.id) {
+      btn.classList.add("correct");
+      if (mark) mark.textContent = "✓";
+    } else if (i === index && !ok) {
+      btn.classList.add("wrong");
+      if (mark) mark.textContent = "✗";
+    } else {
+      btn.classList.add("dim");
+    }
   });
 
   recordOutcome(w, ok, chosen.hiragana);
-  showFeedback(ok, w);
-  afterAnswer(ok);
+  setNextEnabled(true);
 }
 
 function submitTyped() {
@@ -771,14 +783,21 @@ function submitTyped() {
   const ok = checkTypedAnswer(w, raw);
   input.classList.add(ok ? "ok" : "bad");
   input.disabled = true;
-  $("btn-submit").classList.add("hidden");
+  $("btn-submit").disabled = true;
+  const hint = $("type-hint");
+  if (ok) {
+    hint.className = "type-hint ok";
+    hint.innerHTML = `✓ <span class="ans">${escapeHtml(w.hiragana)} · ${escapeHtml(w.romaji)}</span>`;
+  } else {
+    hint.className = "type-hint bad";
+    hint.innerHTML = `✗ <span class="ans">${escapeHtml(w.hiragana)} · ${escapeHtml(w.romaji)}</span>`;
+  }
   recordOutcome(w, ok, raw);
-  showFeedback(ok, w);
-  afterAnswer(ok);
+  setNextEnabled(true);
 }
 
 function nextQuestion() {
-  if (!round) return;
+  if (!round || $("btn-next").disabled) return;
   if (round.index + 1 >= round.queue.length) {
     finishRound();
     return;

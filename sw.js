@@ -1,4 +1,4 @@
-const CACHE = "jp-vocab-quiz-v3";
+const CACHE = "jp-vocab-quiz-v4";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./vocab.json"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
