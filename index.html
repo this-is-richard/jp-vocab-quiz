@@ -257,8 +257,6 @@ const VOCAB = [{"id": "01", "kanji": "触る", "hiragana": "さわる", "romaji"
 const STORAGE_KEY = "jp-vocab-quiz-v1";
 const ROUND_SIZE = 10;
 const MASTER_STREAK = 3;
-const AUTO_ADVANCE_MS = 900;
-
 const $ = (id) => document.getElementById(id);
 const views = {
   home: $("view-home"),
@@ -271,7 +269,6 @@ let state = loadState();
 let showMeaning = false;
 let answerMode = "mc"; // mc | type
 let round = null;
-let advanceTimer = null;
 
 function loadState() {
   try {
@@ -632,12 +629,6 @@ function checkTypedAnswer(w, raw) {
 }
 
 /* ---------- Quiz flow ---------- */
-function clearAdvanceTimer() {
-  if (advanceTimer) {
-    clearTimeout(advanceTimer);
-    advanceTimer = null;
-  }
-}
 
 function setModeUI() {
   $("mode-mc").classList.toggle("active", answerMode === "mc");
@@ -647,7 +638,6 @@ function setModeUI() {
 }
 
 function startRound() {
-  clearAdvanceTimer();
   round = {
     queue: pickRound(),
     index: 0,
@@ -661,7 +651,6 @@ function startRound() {
 }
 
 function renderQuestion() {
-  clearAdvanceTimer();
   const w = round.queue[round.index];
   round.answered = false;
   round.choices = null;
@@ -741,13 +730,8 @@ function showFeedback(ok, w) {
 
 function afterAnswer(ok) {
   $("btn-next").classList.remove("hidden");
-  // Auto-advance: faster on correct
-  const delay = ok ? AUTO_ADVANCE_MS : AUTO_ADVANCE_MS + 500;
-  clearAdvanceTimer();
-  advanceTimer = setTimeout(() => {
-    advanceTimer = null;
-    nextQuestion();
-  }, delay);
+  // Stay on result until user taps 下一題 — especially important when wrong
+  $("btn-next").focus();
 }
 
 function onChoose(index) {
@@ -788,7 +772,6 @@ function submitTyped() {
 }
 
 function nextQuestion() {
-  clearAdvanceTimer();
   if (!round) return;
   if (round.index + 1 >= round.queue.length) {
     finishRound();
@@ -799,7 +782,6 @@ function nextQuestion() {
 }
 
 function finishRound() {
-  clearAdvanceTimer();
   state.roundsPlayed = (state.roundsPlayed || 0) + 1;
   saveState();
   $("q-bar").style.width = "100%";
@@ -833,14 +815,13 @@ function finishRound() {
 /* ---------- UI wiring ---------- */
 $("btn-start").addEventListener("click", startRound);
 $("btn-again").addEventListener("click", startRound);
-$("btn-home").addEventListener("click", () => { clearAdvanceTimer(); refreshHome(); showView("home"); });
+$("btn-home").addEventListener("click", () => { refreshHome(); showView("home"); });
 $("btn-back-home").addEventListener("click", () => { refreshHome(); showView("home"); });
 $("btn-progress").addEventListener("click", () => { refreshProgress(); showView("progress"); });
 $("btn-submit").addEventListener("click", submitTyped);
 $("btn-next").addEventListener("click", nextQuestion);
 $("btn-quit").addEventListener("click", () => {
   if (round && round.index > 0 && !confirm("確定結束今個 round？已答過嘅進度會保留。")) return;
-  clearAdvanceTimer();
   refreshHome();
   showView("home");
 });
