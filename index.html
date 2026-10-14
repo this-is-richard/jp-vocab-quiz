@@ -60,10 +60,30 @@ button, input { font: inherit; }
 .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
 
-.progress-bar { height: 6px; background: var(--surface2); border-radius: 999px; overflow: hidden; margin: 8px 0 16px; }
+.progress-bar { height: 6px; background: var(--surface2); border-radius: 999px; overflow: hidden; margin: 8px 0 12px; }
 .progress-bar > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent-dim), var(--accent)); border-radius: 999px; transition: width .25s ease; }
 
-.quiz-meta { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: .85rem; margin-bottom: 4px; }
+.quiz-meta { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: .85rem; margin-bottom: 6px; gap: 8px; }
+.timer {
+  flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.15rem; font-weight: 800; color: var(--text);
+  background: var(--surface); border: 2px solid var(--accent);
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+.timer.urgent { border-color: var(--warn); color: var(--warn); }
+.timer.done { border-color: var(--bad); color: var(--bad); }
+.timer-bar {
+  height: 4px; background: var(--surface2); border-radius: 999px; overflow: hidden; margin: 0 0 10px;
+}
+.timer-bar > i {
+  display: block; height: 100%; width: 100%;
+  background: var(--accent); border-radius: 999px;
+  transform-origin: left center;
+  transition: width .05s linear, background .15s;
+}
+.timer-bar.urgent > i { background: var(--warn); }
+.timer-bar.done > i { background: var(--bad); width: 0 !important; }
 .kanji-box {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 28px 16px; text-align: center; margin-bottom: 14px;
@@ -194,7 +214,7 @@ button, input { font: inherit; }
     </div>
     <div class="card">
       <h2>讀音練習</h2>
-      <p>睇漢字，揀正確平假名讀音。每 round 10 題；相似讀音作干擾，錯嘅詞會優先再出現。</p>
+      <p>睇漢字，揀正確平假名讀音。每題 5 秒；每 round 10 題。相似讀音作干擾，錯嘅詞會優先再出現。</p>
     </div>
     <div class="mode-seg" role="tablist" aria-label="答題模式">
       <button type="button" id="mode-mc" class="active" role="tab" aria-selected="true">選擇題</button>
@@ -212,8 +232,10 @@ button, input { font: inherit; }
   <section id="view-quiz" class="hidden">
     <div class="quiz-meta">
       <span id="q-progress">1 / 10</span>
+      <span id="q-timer" class="timer" aria-live="polite" aria-label="倒數">5</span>
       <span id="q-score">得分 0</span>
     </div>
+    <div class="timer-bar" id="q-timer-bar-wrap"><i id="q-timer-bar"></i></div>
     <div class="progress-bar"><i id="q-bar"></i></div>
     <div class="kanji-box">
       <div class="kanji" id="q-kanji">—</div>
@@ -277,6 +299,7 @@ const VOCAB = [{"id": "01", "kanji": "触る", "hiragana": "さわる", "romaji"
 const STORAGE_KEY = "jp-vocab-quiz-v1";
 const ROUND_SIZE = 10;
 const MASTER_STREAK = 3;
+const QUESTION_SECONDS = 5;
 const $ = (id) => document.getElementById(id);
 const views = {
   home: $("view-home"),
@@ -289,6 +312,8 @@ let state = loadState();
 let showMeaning = false;
 let answerMode = "mc"; // mc | type
 let round = null;
+let timerId = null;
+let timerEndsAt = 0;
 
 function loadState() {
   try {
@@ -650,6 +675,89 @@ function checkTypedAnswer(w, raw) {
 
 /* ---------- Quiz flow ---------- */
 
+function clearQuestionTimer() {
+  if (timerId) {
+    clearInterval(timerId);
+    timerId = null;
+  }
+  timerEndsAt = 0;
+}
+
+function updateTimerUI(secondsLeft, fraction) {
+  const el = $("q-timer");
+  const wrap = $("q-timer-bar-wrap");
+  const bar = $("q-timer-bar");
+  const sec = Math.max(0, Math.ceil(secondsLeft - 1e-9));
+  el.textContent = String(sec);
+  const urgent = secondsLeft > 0 && secondsLeft <= 2;
+  const done = secondsLeft <= 0;
+  el.classList.toggle("urgent", urgent);
+  el.classList.toggle("done", done);
+  wrap.classList.toggle("urgent", urgent);
+  wrap.classList.toggle("done", done);
+  bar.style.width = `${Math.max(0, Math.min(1, fraction)) * 100}%`;
+}
+
+function startQuestionTimer() {
+  clearQuestionTimer();
+  const total = QUESTION_SECONDS;
+  timerEndsAt = Date.now() + total * 1000;
+  updateTimerUI(total, 1);
+  timerId = setInterval(() => {
+    if (!round || round.answered) {
+      clearQuestionTimer();
+      return;
+    }
+    const leftMs = timerEndsAt - Date.now();
+    const left = Math.max(0, leftMs / 1000);
+    updateTimerUI(left, left / total);
+    if (leftMs <= 0) {
+      clearQuestionTimer();
+      onTimeout();
+    }
+  }, 50);
+}
+
+function revealCorrectMc(timeout) {
+  const w = round.queue[round.index];
+  const buttons = [...$("mc-wrap").querySelectorAll(".choice")];
+  buttons.forEach((btn) => {
+    btn.disabled = true;
+    const i = Number(btn.dataset.index);
+    const opt = round.choices[i];
+    const mark = btn.querySelector(".choice-mark");
+    if (opt.id === w.id) {
+      btn.classList.add("correct");
+      if (mark) mark.textContent = "✓";
+    } else {
+      btn.classList.add("dim");
+      if (timeout && mark) mark.textContent = "";
+    }
+  });
+}
+
+function onTimeout() {
+  if (!round || round.answered) return;
+  round.answered = true;
+  const w = round.queue[round.index];
+  updateTimerUI(0, 0);
+
+  if (answerMode === "mc" && round.choices) {
+    revealCorrectMc(true);
+  } else {
+    const input = $("q-input");
+    input.disabled = true;
+    input.classList.add("bad");
+    $("btn-submit").disabled = true;
+    const hint = $("type-hint");
+    hint.className = "type-hint bad";
+    hint.innerHTML = `時間到 · <span class="ans">${escapeHtml(w.hiragana)} · ${escapeHtml(w.romaji)}</span>`;
+  }
+
+  recordOutcome(w, false, "時間到");
+  setNextEnabled(true);
+}
+
 function setModeUI() {
   $("mode-mc").classList.toggle("active", answerMode === "mc");
   $("mode-type").classList.toggle("active", answerMode === "type");
@@ -719,6 +827,8 @@ function renderQuestion() {
     submit.classList.remove("hidden");
     setTimeout(() => input.focus(), 50);
   }
+
+  startQuestionTimer();
 }
 
 function recordOutcome(w, ok, userLabel) {
@@ -748,6 +858,7 @@ function setNextEnabled(on) {
 
 function onChoose(index) {
   if (!round || round.answered) return;
+  clearQuestionTimer();
   const w = round.queue[round.index];
   const chosen = round.choices[index];
   const ok = chosen.id === w.id;
@@ -779,6 +890,7 @@ function submitTyped() {
   const input = $("q-input");
   const raw = input.value.trim();
   if (!raw) { input.focus(); return; }
+  clearQuestionTimer();
   round.answered = true;
   const ok = checkTypedAnswer(w, raw);
   input.classList.add(ok ? "ok" : "bad");
@@ -807,6 +919,7 @@ function nextQuestion() {
 }
 
 function finishRound() {
+  clearQuestionTimer();
   state.roundsPlayed = (state.roundsPlayed || 0) + 1;
   saveState();
   $("q-bar").style.width = "100%";
@@ -840,13 +953,14 @@ function finishRound() {
 /* ---------- UI wiring ---------- */
 $("btn-start").addEventListener("click", startRound);
 $("btn-again").addEventListener("click", startRound);
-$("btn-home").addEventListener("click", () => { refreshHome(); showView("home"); });
+$("btn-home").addEventListener("click", () => { clearQuestionTimer(); refreshHome(); showView("home"); });
 $("btn-back-home").addEventListener("click", () => { refreshHome(); showView("home"); });
 $("btn-progress").addEventListener("click", () => { refreshProgress(); showView("progress"); });
 $("btn-submit").addEventListener("click", submitTyped);
 $("btn-next").addEventListener("click", nextQuestion);
 $("btn-quit").addEventListener("click", () => {
   if (round && round.index > 0 && !confirm("確定結束今個 round？已答過嘅進度會保留。")) return;
+  clearQuestionTimer();
   refreshHome();
   showView("home");
 });
