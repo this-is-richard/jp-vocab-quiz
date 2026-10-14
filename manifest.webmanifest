@@ -1,0 +1,18 @@
+{
+  "name": "日文讀音 Quiz",
+  "short_name": "讀音Quiz",
+  "description": "Japanese vocab reading practice from Vocab sheet",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f1419",
+  "theme_color": "#0f1419",
+  "lang": "zh-Hant-HK",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

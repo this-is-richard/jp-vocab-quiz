@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#0f1419">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="日文讀音練習 — Vocab Quiz">
+<title>日文讀音 · Vocab Quiz</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root {
+  --bg: #0f1419;
+  --surface: #1a2332;
+  --surface2: #243044;
+  --border: #2d3a4f;
+  --text: #e8eef7;
+  --muted: #8b9bb4;
+  --accent: #5b9fff;
+  --accent-dim: #3a6fbf;
+  --good: #3dd68c;
+  --good-bg: rgba(61,214,140,.12);
+  --bad: #ff6b7a;
+  --bad-bg: rgba(255,107,122,.12);
+  --warn: #ffc14d;
+  --radius: 16px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang HK", "Noto Sans TC", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100%; }
+body { font-family: var(--font); padding: 0 0 calc(16px + var(--safe-bottom)); }
+button, input { font: inherit; }
+.app { max-width: 480px; margin: 0 auto; padding: 20px 16px 0; min-height: 100dvh; display: flex; flex-direction: column; }
+.hidden { display: none !important; }
+
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.logo { font-size: 1.15rem; font-weight: 700; letter-spacing: .02em; }
+.logo span { color: var(--accent); }
+.chip { font-size: .75rem; color: var(--muted); background: var(--surface); border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 14px; }
+.card h2 { margin: 0 0 8px; font-size: 1.05rem; }
+.card p { margin: 0; color: var(--muted); font-size: .9rem; line-height: 1.45; }
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 8px; text-align: center; }
+.stat .n { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+.stat .l { font-size: .7rem; color: var(--muted); margin-top: 2px; }
+
+.btn {
+  display: block; width: 100%; border: none; border-radius: 14px;
+  padding: 16px 18px; font-size: 1.05rem; font-weight: 600;
+  cursor: pointer; transition: transform .08s ease, opacity .15s;
+  margin-bottom: 10px;
+}
+.btn:active { transform: scale(.98); }
+.btn-primary { background: var(--accent); color: #061018; }
+.btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-row { display: flex; gap: 10px; }
+.btn-row .btn { flex: 1; margin-bottom: 0; }
+
+.progress-bar { height: 6px; background: var(--surface2); border-radius: 999px; overflow: hidden; margin: 8px 0 16px; }
+.progress-bar > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent-dim), var(--accent)); border-radius: 999px; transition: width .25s ease; }
+
+.quiz-meta { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: .85rem; margin-bottom: 4px; }
+.kanji-box {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 36px 16px; text-align: center; margin-bottom: 14px;
+  min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.kanji { font-size: clamp(2.4rem, 10vw, 3.4rem); font-weight: 700; letter-spacing: .06em; line-height: 1.2; }
+.meaning { margin-top: 10px; color: var(--muted); font-size: .95rem; }
+
+.input-wrap { margin-bottom: 12px; }
+.input-wrap label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: 6px; }
+.input-wrap input {
+  width: 100%; background: var(--surface); border: 2px solid var(--border); border-radius: 14px;
+  color: var(--text); padding: 16px 14px; font-size: 1.15rem; outline: none;
+}
+.input-wrap input:focus { border-color: var(--accent); }
+.input-wrap input.ok { border-color: var(--good); background: var(--good-bg); }
+.input-wrap input.bad { border-color: var(--bad); background: var(--bad-bg); }
+
+.feedback {
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; font-size: .95rem;
+  display: none;
+}
+.feedback.show { display: block; }
+.feedback.ok { background: var(--good-bg); color: var(--good); border: 1px solid rgba(61,214,140,.35); }
+.feedback.bad { background: var(--bad-bg); color: var(--bad); border: 1px solid rgba(255,107,122,.35); }
+.feedback .reading { color: var(--text); font-weight: 600; margin-top: 4px; }
+
+.toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; color: var(--muted); font-size: .9rem; }
+.switch {
+  width: 48px; height: 28px; border-radius: 999px; background: var(--surface2); border: 1px solid var(--border);
+  position: relative; cursor: pointer; flex-shrink: 0;
+}
+.switch.on { background: var(--accent-dim); border-color: var(--accent); }
+.switch::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+  border-radius: 50%; background: #fff; transition: left .15s;
+}
+.switch.on::after { left: 23px; }
+
+.score-big { text-align: center; padding: 24px 0 8px; }
+.score-big .num { font-size: 3.2rem; font-weight: 800; color: var(--accent); }
+.score-big .sub { color: var(--muted); margin-top: 4px; }
+
+.miss-list { list-style: none; padding: 0; margin: 0 0 16px; }
+.miss-list li {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; gap: 10px; align-items: baseline;
+}
+.miss-list .k { font-weight: 700; font-size: 1.1rem; }
+.miss-list .r { color: var(--good); font-size: .9rem; }
+.miss-list .u { color: var(--bad); font-size: .8rem; display: block; margin-top: 2px; }
+
+.weak-list { list-style: none; padding: 0; margin: 0; max-height: 280px; overflow: auto; }
+.weak-list li {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--border); font-size: .9rem;
+}
+.weak-list li:last-child { border-bottom: none; }
+.badge { font-size: .7rem; padding: 2px 8px; border-radius: 999px; background: var(--bad-bg); color: var(--bad); }
+
+.footer-note { text-align: center; color: var(--muted); font-size: .75rem; margin-top: auto; padding-top: 24px; opacity: .7; }
+
+.empty { text-align: center; color: var(--muted); padding: 20px 0; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- HOME -->
+  <section id="view-home">
+    <div class="header">
+      <div class="logo">日文讀音 <span>Quiz</span></div>
+      <div class="chip" id="home-count">— 詞</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n" id="stat-seen">0</div><div class="l">見過</div></div>
+      <div class="stat"><div class="n" id="stat-mastered">0</div><div class="l">掌握</div></div>
+      <div class="stat"><div class="n" id="stat-weak">0</div><div class="l">弱項</div></div>
+    </div>
+    <div class="card">
+      <h2>讀音練習</h2>
+      <p>睇漢字，輸入平假名或羅馬字。每 round 10 題；錯嘅詞會優先再出現。</p>
+    </div>
+    <button class="btn btn-primary" id="btn-start">開始 Round</button>
+    <button class="btn btn-secondary" id="btn-progress">進度 / 弱項</button>
+    <div class="toggle">
+      <span>顯示意思（提示）</span>
+      <div class="switch" id="toggle-meaning" role="switch" aria-checked="false"></div>
+    </div>
+    <p class="footer-note">資料來自 Japanese Vocab · 本地儲存進度</p>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="view-quiz" class="hidden">
+    <div class="quiz-meta">
+      <span id="q-progress">1 / 10</span>
+      <span id="q-score">得分 0</span>
+    </div>
+    <div class="progress-bar"><i id="q-bar"></i></div>
+    <div class="kanji-box">
+      <div class="kanji" id="q-kanji">—</div>
+      <div class="meaning hidden" id="q-meaning"></div>
+    </div>
+    <div class="input-wrap">
+      <label for="q-input">讀音（平假名 或 romaji）</label>
+      <input id="q-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="例：さわる 或 sawaru">
+    </div>
+    <div class="feedback" id="q-feedback"></div>
+    <button class="btn btn-primary" id="btn-submit">提交</button>
+    <button class="btn btn-ghost hidden" id="btn-next">下一題</button>
+    <button class="btn btn-ghost" id="btn-quit" style="margin-top:8px">結束並返主頁</button>
+  </section>
+
+  <!-- RESULT -->
+  <section id="view-result" class="hidden">
+    <div class="header">
+      <div class="logo">本 Round 結果</div>
+    </div>
+    <div class="score-big">
+      <div class="num" id="result-score">0/10</div>
+      <div class="sub" id="result-msg">做得好！</div>
+    </div>
+    <div id="result-misses-wrap" class="hidden">
+      <div class="card" style="padding-bottom:8px">
+        <h2>今次錯咗</h2>
+        <ul class="miss-list" id="result-misses"></ul>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="btn-again">再玩一 Round</button>
+    <button class="btn btn-secondary" id="btn-home">返主頁</button>
+  </section>
+
+  <!-- PROGRESS -->
+  <section id="view-progress" class="hidden">
+    <div class="header">
+      <div class="logo">進度</div>
+      <button class="btn btn-ghost" id="btn-back-home" style="width:auto;padding:8px 12px;margin:0;font-size:.85rem">返主頁</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n" id="p-seen">0</div><div class="l">見過</div></div>
+      <div class="stat"><div class="n" id="p-mastered">0</div><div class="l">掌握³</div></div>
+      <div class="stat"><div class="n" id="p-rounds">0</div><div class="l">Rounds</div></div>
+    </div>
+    <div class="card">
+      <h2>弱項詞（錯得多）</h2>
+      <ul class="weak-list" id="weak-list"></ul>
+      <div class="empty hidden" id="weak-empty">暫時冇弱項，繼續練！</div>
+    </div>
+    <button class="btn btn-ghost" id="btn-reset">重置所有進度</button>
+  </section>
+
+</div>
+<script>
+const VOCAB = [{"id": "01", "kanji": "触る", "hiragana": "さわる", "romaji": "sawaru", "meaning": "to touch"}, {"id": "02", "kanji": "座る", "hiragana": "すわる", "romaji": "suwaru", "meaning": "to sit"}, {"id": "03", "kanji": "授業", "hiragana": "じゅぎょう", "romaji": "jugyou", "meaning": "class / lesson"}, {"id": "04", "kanji": "計画", "hiragana": "けいかく", "romaji": "keikaku", "meaning": "plan / project"}, {"id": "05", "kanji": "直す", "hiragana": "なおす", "romaji": "naosu", "meaning": "to fix / repair"}, {"id": "06", "kanji": "治る", "hiragana": "なおる", "romaji": "naoru", "meaning": "to heal / cure"}, {"id": "07", "kanji": "中止", "hiragana": "ちゅうし", "romaji": "chuushi", "meaning": "cancellation / suspension"}, {"id": "08", "kanji": "調子", "hiragana": "ちょうし", "romaji": "choushi", "meaning": "condition / state"}, {"id": "09", "kanji": "足りる", "hiragana": "たりる", "romaji": "tariru", "meaning": "to be sufficient / enough"}, {"id": "10", "kanji": "駅員", "hiragana": "えきいん", "romaji": "ekiin", "meaning": "station attendant"}, {"id": "11", "kanji": "便箋", "hiragana": "びんせん", "romaji": "binsen", "meaning": "writing paper / stationery"}, {"id": "12", "kanji": "淹れる", "hiragana": "いれる", "romaji": "ireru", "meaning": "to brew / to make (tea or coffee)"}, {"id": "13", "kanji": "側", "hiragana": "そば", "romaji": "soba", "meaning": "close to (arm distance)"}, {"id": "14", "kanji": "隣", "hiragana": "となり", "romaji": "tonari", "meaning": "next door"}, {"id": "15", "kanji": "近く", "hiragana": "ちかく", "romaji": "chikaku", "meaning": "nearby / close by"}, {"id": "16", "kanji": "あたり", "hiragana": "あたり", "romaji": "atari", "meaning": "around / vicinity"}, {"id": "17", "kanji": "周り", "hiragana": "まわり", "romaji": "mawari", "meaning": "around / surroundings"}, {"id": "18", "kanji": "側", "hiragana": "がわ", "romaji": "gawa", "meaning": "side"}, {"id": "19", "kanji": "連れる", "hiragana": "つれる", "romaji": "tsureru", "meaning": "to bring someone along"}, {"id": "20", "kanji": "向かい", "hiragana": "むかい", "romaji": "mukai", "meaning": "the opposite side"}, {"id": "21", "kanji": "向かう", "hiragana": "むかう", "romaji": "mukau", "meaning": "to face / to head toward"}, {"id": "22", "kanji": "工場", "hiragana": "こうじょう", "romaji": "koujou", "meaning": "factory"}, {"id": "23", "kanji": "故障", "hiragana": "こしょう", "romaji": "koshou", "meaning": "out of order / breakdown"}, {"id": "24", "kanji": "交通", "hiragana": "こうつう", "romaji": "koutsuu", "meaning": "traffic"}, {"id": "25", "kanji": "事故", "hiragana": "じこ", "romaji": "jiko", "meaning": "accident / incident"}, {"id": "26", "kanji": "都合", "hiragana": "つごう", "romaji": "tsugou", "meaning": "convenience / timing"}, {"id": "27", "kanji": "芸能人", "hiragana": "げいのうじん", "romaji": "geinoujin", "meaning": "entertainer / performer"}, {"id": "28", "kanji": "踊る", "hiragana": "おどる", "romaji": "odoru", "meaning": "to dance"}, {"id": "29", "kanji": "怒る", "hiragana": "おこる", "romaji": "okoru", "meaning": "to be angry"}, {"id": "30", "kanji": "驚く", "hiragana": "おどろく", "romaji": "odoroku", "meaning": "to be surprised"}, {"id": "31", "kanji": "生活", "hiragana": "せいかつ", "romaji": "seikatsu", "meaning": "life / livelihood"}, {"id": "32", "kanji": "四月", "hiragana": "しがつ", "romaji": "shigatsu", "meaning": "April"}, {"id": "33", "kanji": "暮らし", "hiragana": "くらし", "romaji": "kurashi", "meaning": "living / livelihood"}, {"id": "34", "kanji": "通う", "hiragana": "かよう", "romaji": "kayou", "meaning": "to commute"}, {"id": "35", "kanji": "慣れる", "hiragana": "なれる", "romaji": "nareru", "meaning": "to get used to"}, {"id": "36", "kanji": "渡る", "hiragana": "わたる", "romaji": "wataru", "meaning": "to cross"}, {"id": "37", "kanji": "渡す", "hiragana": "わたす", "romaji": "watasu", "meaning": "to hand over"}, {"id": "38", "kanji": "本当", "hiragana": "ほんとう", "romaji": "hontou", "meaning": "real / true", "altHiragana": ["ほんと"], "altRomaji": ["honto", "hontō"]}, {"id": "39", "kanji": "本気", "hiragana": "ほんき", "romaji": "honki", "meaning": "serious / earnest"}, {"id": "40", "kanji": "本格", "hiragana": "ほんかく", "romaji": "honkaku", "meaning": "authentic (style)"}, {"id": "41", "kanji": "本物", "hiragana": "ほんもの", "romaji": "honmono", "meaning": "the real thing"}, {"id": "42", "kanji": "練習", "hiragana": "れんしゅう", "romaji": "renshuu", "meaning": "practice"}, {"id": "43", "kanji": "予習", "hiragana": "よしゅう", "romaji": "yoshuu", "meaning": "preparation (study ahead)"}, {"id": "44", "kanji": "復習", "hiragana": "ふくしゅう", "romaji": "fukushuu", "meaning": "revision / review"}, {"id": "45", "kanji": "禁煙", "hiragana": "きんえん", "romaji": "kinen", "meaning": "no smoking"}, {"id": "46", "kanji": "…について", "hiragana": "ついて", "romaji": "tsuite", "meaning": "about…", "display": "…について"}, {"id": "47", "kanji": "手作り", "hiragana": "てづくり", "romaji": "tezukuri", "meaning": "handmade"}, {"id": "48", "kanji": "勤め", "hiragana": "つとめ", "romaji": "tsutome", "meaning": "work / employment"}, {"id": "49", "kanji": "勤める", "hiragana": "つとめる", "romaji": "tsutomeru", "meaning": "to work (for)"}, {"id": "50", "kanji": "お出掛け", "hiragana": "おでかけ", "romaji": "odekake", "meaning": "going out"}, {"id": "51", "kanji": "種類", "hiragana": "しゅるい", "romaji": "shurui", "meaning": "type / kind"}, {"id": "52", "kanji": "書類", "hiragana": "しょるい", "romaji": "shorui", "meaning": "document"}, {"id": "53", "kanji": "植える", "hiragana": "うえる", "romaji": "ueru", "meaning": "to plant"}, {"id": "54", "kanji": "しまう", "hiragana": "しまう", "romaji": "shimau", "meaning": "to put away / finish (しまう)"}, {"id": "55", "kanji": "纏める", "hiragana": "まとめる", "romaji": "matomeru", "meaning": "to summarize / consolidate"}, {"id": "56", "kanji": "片付ける", "hiragana": "かたづける", "romaji": "katazukeru", "meaning": "to tidy up", "altHiragana": ["かたずける"], "altRomaji": ["katazukeru"]}, {"id": "57", "kanji": "時給", "hiragana": "じきゅう", "romaji": "jikyuu", "meaning": "hourly wage"}, {"id": "58", "kanji": "給料", "hiragana": "きゅうりょう", "romaji": "kyuuryou", "meaning": "salary"}, {"id": "59", "kanji": "休憩", "hiragana": "きゅうけい", "romaji": "kyuukei", "meaning": "break / recess"}, {"id": "60", "kanji": "続く", "hiragana": "つづく", "romaji": "tsuzuku", "meaning": "to continue"}, {"id": "61", "kanji": "黙る", "hiragana": "だまる", "romaji": "damaru", "meaning": "to be quiet / fall silent"}, {"id": "62", "kanji": "機械", "hiragana": "きかい", "romaji": "kikai", "meaning": "machine"}, {"id": "63", "kanji": "機会", "hiragana": "きかい", "romaji": "kikai", "meaning": "chance / opportunity"}, {"id": "64", "kanji": "騒ぐ", "hiragana": "さわぐ", "romaji": "sawagu", "meaning": "to make noise"}, {"id": "65", "kanji": "お決まり", "hiragana": "おきまり", "romaji": "okimari", "meaning": "decision / usual"}, {"id": "66", "kanji": "お付け", "hiragana": "おつけ", "romaji": "otsuke", "meaning": "attachment / side dish"}, {"id": "67", "kanji": "お預かり", "hiragana": "おあずかり", "romaji": "oazukari", "meaning": "I'll keep this (for you)"}, {"id": "68", "kanji": "お釣り", "hiragana": "おつり", "romaji": "otsuri", "meaning": "change (money)"}, {"id": "69", "kanji": "駐車禁止", "hiragana": "ちゅうしゃきんし", "romaji": "chuushakinshi", "meaning": "no parking"}, {"id": "70", "kanji": "立入禁止", "hiragana": "たちいりきんし", "romaji": "tachiirikinshi", "meaning": "no entrance"}, {"id": "71", "kanji": "諦める", "hiragana": "あきらめる", "romaji": "akirameru", "meaning": "to give up"}];
+
+const STORAGE_KEY = "jp-vocab-quiz-v1";
+const ROUND_SIZE = 10;
+const MASTER_STREAK = 3;
+
+const $ = (id) => document.getElementById(id);
+const views = {
+  home: $("view-home"),
+  quiz: $("view-quiz"),
+  result: $("view-result"),
+  progress: $("view-progress"),
+};
+
+let state = loadState();
+let showMeaning = false;
+let round = null; // { queue, index, score, misses, answered }
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && s.words) return s;
+    }
+  } catch (e) {}
+  return { words: {}, roundsPlayed: 0, totalCorrect: 0, totalAsked: 0 };
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function wordKey(w) {
+  return w.id;
+}
+
+function ensureWord(id) {
+  if (!state.words[id]) {
+    state.words[id] = { seen: 0, correct: 0, wrong: 0, streak: 0, last: 0 };
+  }
+  return state.words[id];
+}
+
+function showView(name) {
+  Object.values(views).forEach((v) => v.classList.add("hidden"));
+  views[name].classList.remove("hidden");
+}
+
+function refreshHome() {
+  const total = VOCAB.length;
+  $("home-count").textContent = total + " 詞";
+  let seen = 0, mastered = 0, weak = 0;
+  for (const w of VOCAB) {
+    const s = state.words[w.id];
+    if (!s) continue;
+    if (s.seen > 0) seen++;
+    if (s.streak >= MASTER_STREAK) mastered++;
+    if (s.wrong > s.correct) weak++;
+  }
+  $("stat-seen").textContent = seen;
+  $("stat-mastered").textContent = mastered;
+  $("stat-weak").textContent = weak;
+}
+
+function refreshProgress() {
+  let seen = 0, mastered = 0;
+  const weakItems = [];
+  for (const w of VOCAB) {
+    const s = state.words[w.id];
+    if (!s) continue;
+    if (s.seen > 0) seen++;
+    if (s.streak >= MASTER_STREAK) mastered++;
+    if (s.wrong > 0) {
+      weakItems.push({ w, s, score: s.wrong * 2 - s.correct + (s.streak <= 0 ? 2 : 0) });
+    }
+  }
+  weakItems.sort((a, b) => b.score - a.score || b.s.wrong - a.s.wrong);
+  $("p-seen").textContent = seen;
+  $("p-mastered").textContent = mastered;
+  $("p-rounds").textContent = state.roundsPlayed || 0;
+  const list = $("weak-list");
+  const empty = $("weak-empty");
+  list.innerHTML = "";
+  if (!weakItems.length) {
+    empty.classList.remove("hidden");
+  } else {
+    empty.classList.add("hidden");
+    for (const item of weakItems.slice(0, 20)) {
+      const li = document.createElement("li");
+      li.innerHTML = `<span><strong>${escapeHtml(item.w.kanji)}</strong> <span style="color:var(--muted)">${escapeHtml(item.w.hiragana)}</span></span><span class="badge">錯 ${item.s.wrong}</span>`;
+      list.appendChild(li);
+    }
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function weightFor(w) {
+  const s = state.words[w.id];
+  if (!s || s.seen === 0) return 8; // unseen priority
+  let weight = 1;
+  weight += s.wrong * 3;
+  weight += Math.max(0, 3 - s.streak) * 2;
+  if (s.streak >= MASTER_STREAK) weight = Math.max(0.4, weight * 0.25);
+  // slight freshness: not seen recently
+  const age = Date.now() - (s.last || 0);
+  if (age > 86400000 * 3) weight += 1.5;
+  return weight;
+}
+
+function pickRound() {
+  // Weighted random sample without replacement
+  const pool = VOCAB.map((w) => ({ w, weight: weightFor(w) }));
+  const picked = [];
+  const temp = pool.slice();
+  const n = Math.min(ROUND_SIZE, temp.length);
+  for (let i = 0; i < n; i++) {
+    const total = temp.reduce((sum, x) => sum + x.weight, 0);
+    let r = Math.random() * total;
+    let idx = 0;
+    for (let j = 0; j < temp.length; j++) {
+      r -= temp[j].weight;
+      if (r <= 0) { idx = j; break; }
+    }
+    picked.push(temp[idx].w);
+    temp.splice(idx, 1);
+  }
+  return shuffle(picked);
+}
+
+/* ---------- Answer normalization ---------- */
+function stripMarks(s) {
+  return s.normalize("NFKC")
+    .replace(/[\s\u3000_\-・·'.]/g, "")
+    .replace(/[ー―─]/g, "")
+    .toLowerCase();
+}
+
+function expandRomajiLongVowels(s) {
+  // Accept ou/oo, uu, ei/ee, aa, ii, and macron forms already stripped
+  // Generate a few common equivalents for matching
+  const variants = new Set([s]);
+  const swap = (str, a, b) => {
+    if (str.includes(a)) variants.add(str.split(a).join(b));
+    if (str.includes(b)) variants.add(str.split(b).join(a));
+  };
+  // iterate a couple times for compounded
+  for (let i = 0; i < 2; i++) {
+    const cur = [...variants];
+    for (const v of cur) {
+      swap(v, "ou", "oo");
+      swap(v, "uu", "u"); // soft: allow missing long u? no — keep uu
+      swap(v, "aa", "a");
+      swap(v, "ee", "ei");
+      swap(v, "ii", "i");
+      // n' handling already stripped apostrophe
+      if (v.includes("ou")) variants.add(v.replace(/ou/g, "ō").replace(/ō/g, "o")); // unlikely after strip
+    }
+  }
+  // Also: juugyou <-> jugyou style (double vowel written)
+  const more = [];
+  for (const v of variants) {
+    more.push(v.replace(/oo/g, "ou"));
+    more.push(v.replace(/ou/g, "oo"));
+    // chuu <-> chu for 中? keep strict-ish
+  }
+  more.forEach((m) => variants.add(m));
+  return variants;
+}
+
+function acceptSet(w) {
+  const set = new Set();
+  const addH = (h) => { if (h) set.add(stripMarks(h)); };
+  const addR = (r) => {
+    if (!r) return;
+    const base = stripMarks(r);
+    for (const v of expandRomajiLongVowels(base)) set.add(v);
+  };
+  addH(w.hiragana);
+  addR(w.romaji);
+  (w.altHiragana || []).forEach(addH);
+  (w.altRomaji || []).forEach(addR);
+  // Common: づ <-> ず for 片付ける already in alt
+  return set;
+}
+
+function checkAnswer(w, raw) {
+  const ans = stripMarks(raw || "");
+  if (!ans) return false;
+  const set = acceptSet(w);
+  if (set.has(ans)) return true;
+  // Also try expanding user romaji
+  for (const v of expandRomajiLongVowels(ans)) {
+    if (set.has(v)) return true;
+  }
+  return false;
+}
+
+/* ---------- Quiz flow ---------- */
+function startRound() {
+  round = {
+    queue: pickRound(),
+    index: 0,
+    score: 0,
+    misses: [],
+    answered: false,
+  };
+  showView("quiz");
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const w = round.queue[round.index];
+  round.answered = false;
+  $("q-progress").textContent = `${round.index + 1} / ${round.queue.length}`;
+  $("q-score").textContent = `得分 ${round.score}`;
+  $("q-bar").style.width = `${(round.index / round.queue.length) * 100}%`;
+  $("q-kanji").textContent = w.display || w.kanji;
+  $("q-meaning").textContent = w.meaning || "";
+  if (showMeaning) $("q-meaning").classList.remove("hidden");
+  else $("q-meaning").classList.add("hidden");
+  const input = $("q-input");
+  input.value = "";
+  input.classList.remove("ok", "bad");
+  input.disabled = false;
+  $("q-feedback").className = "feedback";
+  $("q-feedback").innerHTML = "";
+  $("btn-submit").classList.remove("hidden");
+  $("btn-next").classList.add("hidden");
+  $("btn-submit").textContent = "提交";
+  setTimeout(() => input.focus(), 50);
+}
+
+function submitAnswer() {
+  if (!round || round.answered) return;
+  const w = round.queue[round.index];
+  const input = $("q-input");
+  const raw = input.value.trim();
+  if (!raw) {
+    input.focus();
+    return;
+  }
+  round.answered = true;
+  const ok = checkAnswer(w, raw);
+  const st = ensureWord(w.id);
+  st.seen += 1;
+  st.last = Date.now();
+  state.totalAsked += 1;
+
+  const fb = $("q-feedback");
+  if (ok) {
+    round.score += 1;
+    st.correct += 1;
+    st.streak += 1;
+    state.totalCorrect += 1;
+    input.classList.add("ok");
+    fb.className = "feedback show ok";
+    fb.innerHTML = `✓ 啱！<div class="reading">${escapeHtml(w.hiragana)} · ${escapeHtml(w.romaji)}</div>`;
+  } else {
+    st.wrong += 1;
+    st.streak = 0;
+    round.misses.push({ w, user: raw });
+    input.classList.add("bad");
+    fb.className = "feedback show bad";
+    fb.innerHTML = `✗ 唔啱<div class="reading">正確：${escapeHtml(w.hiragana)} · ${escapeHtml(w.romaji)}</div>`;
+  }
+  saveState();
+  input.disabled = true;
+  $("btn-submit").classList.add("hidden");
+  $("btn-next").classList.remove("hidden");
+  $("q-score").textContent = `得分 ${round.score}`;
+  $("btn-next").focus();
+}
+
+function nextQuestion() {
+  if (!round) return;
+  if (round.index + 1 >= round.queue.length) {
+    finishRound();
+    return;
+  }
+  round.index += 1;
+  renderQuestion();
+}
+
+function finishRound() {
+  state.roundsPlayed = (state.roundsPlayed || 0) + 1;
+  saveState();
+  $("q-bar").style.width = "100%";
+  const score = round.score;
+  const total = round.queue.length;
+  $("result-score").textContent = `${score}/${total}`;
+  let msg = "繼續加油！";
+  if (score === total) msg = "滿分！勁呀 🎉";
+  else if (score >= 8) msg = "好穩陣！";
+  else if (score >= 5) msg = "唔錯，弱項再練下。";
+  else msg = "慢慢嚟，錯嘅會再出現。";
+  $("result-msg").textContent = msg;
+
+  const wrap = $("result-misses-wrap");
+  const list = $("result-misses");
+  list.innerHTML = "";
+  if (round.misses.length) {
+    wrap.classList.remove("hidden");
+    for (const m of round.misses) {
+      const li = document.createElement("li");
+      li.innerHTML = `<div><span class="k">${escapeHtml(m.w.kanji)}</span><span class="u">你答：${escapeHtml(m.user)}</span></div><div class="r">${escapeHtml(m.w.hiragana)}</div>`;
+      list.appendChild(li);
+    }
+  } else {
+    wrap.classList.add("hidden");
+  }
+  showView("result");
+  refreshHome();
+}
+
+/* ---------- UI wiring ---------- */
+$("btn-start").addEventListener("click", startRound);
+$("btn-again").addEventListener("click", startRound);
+$("btn-home").addEventListener("click", () => { refreshHome(); showView("home"); });
+$("btn-back-home").addEventListener("click", () => { refreshHome(); showView("home"); });
+$("btn-progress").addEventListener("click", () => { refreshProgress(); showView("progress"); });
+$("btn-submit").addEventListener("click", submitAnswer);
+$("btn-next").addEventListener("click", nextQuestion);
+$("btn-quit").addEventListener("click", () => {
+  if (round && round.index > 0 && !confirm("確定結束今個 round？進度（已答過嘅）會保留。")) return;
+  refreshHome();
+  showView("home");
+});
+$("btn-reset").addEventListener("click", () => {
+  if (!confirm("重置所有本地進度？唔可以復原。")) return;
+  state = { words: {}, roundsPlayed: 0, totalCorrect: 0, totalAsked: 0 };
+  saveState();
+  refreshProgress();
+  refreshHome();
+});
+
+$("q-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    if (round && round.answered) nextQuestion();
+    else submitAnswer();
+  }
+});
+
+const toggle = $("toggle-meaning");
+toggle.addEventListener("click", () => {
+  showMeaning = !showMeaning;
+  toggle.classList.toggle("on", showMeaning);
+  toggle.setAttribute("aria-checked", showMeaning ? "true" : "false");
+  try { localStorage.setItem(STORAGE_KEY + "-meaning", showMeaning ? "1" : "0"); } catch (e) {}
+});
+try { if (localStorage.getItem(STORAGE_KEY + "-meaning") === "1") { showMeaning = true; toggle.classList.add("on"); toggle.setAttribute("aria-checked","true"); } } catch (e) {}
+
+// Service worker optional — skip if file:// 
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  navigator.serviceWorker.register("./sw.js").catch(() => {});
+}
+
+refreshHome();
+showView("home");
+</script>
+</body>
+</html>
